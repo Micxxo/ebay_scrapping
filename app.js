@@ -4,7 +4,7 @@ require('dotenv').config()
 
 const app = express()
 const APPLICATION_PORT = process.env.APP_PORT || 3000;
-const APPLICATION_VERSION = process.env.VERIONING;
+const APPLICATION_VERSION = process.env.VERSIONING;
 
 app.use(express.json())
 app.use(`/api/${APPLICATION_VERSION}`, scrapingRoute);
