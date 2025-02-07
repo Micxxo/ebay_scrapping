@@ -4,7 +4,7 @@ This project is a web scraping application designed to **extract product details
 
 ## Installation
 
-Install my project with npm
+Install project with npm
 
 1.) Clone Repository
 
@@ -22,14 +22,15 @@ Install my project with npm
 3.) Setup LM Studio and Deepseek Model
 
 - Download and install [LM Studio](https://lmstudio.ai/)
-- Open LM Studio, then search and download for model deepseek-coder-v2-lite-instruct
-- Open developer page on sidebar load the model and start the server
-- Use default LM Studi endpoint:
+- Launch LM Studio, then search for deepseek-coder-v2-lite-instruct and download the model
+- Navigate to the Developer page in the sidebar, load the model, and start the server.
+- Use default LM Studi0 endpoint:
+
   ```bash
   http://127.0.0.1:1234
   ```
 
-4.) Setup Environment Variables
+  4.) Setup Environment Variables
 
 ```bash
 APP_PORT → The port number where the Express.js application runs.
