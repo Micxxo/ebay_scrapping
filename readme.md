@@ -24,7 +24,7 @@ Install project with npm
 - Download and install [LM Studio](https://lmstudio.ai/)
 - Launch LM Studio, then search for deepseek-coder-v2-lite-instruct and download the model
 - Navigate to the Developer page in the sidebar, load the model, and start the server.
-- Use default LM Studi0 endpoint:
+- Use default LM Studio endpoint:
 
   ```bash
   http://127.0.0.1:1234
