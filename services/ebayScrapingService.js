@@ -4,15 +4,31 @@ const { Cluster } = require("puppeteer-cluster");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 puppeteer.use(StealthPlugin());
 
+const handleInterceptRequest = (page) => {
+  page.on("request", (interceptedRequest) => {
+    if (interceptedRequest.isInterceptResolutionHandled()) return;
+    if (
+      interceptedRequest.url().endsWith(".png") ||
+      interceptedRequest.url().endsWith(".jpg") ||
+      interceptedRequest.url().endsWith(".css") ||
+      interceptedRequest.url().endsWith(".js")
+    )
+      interceptedRequest.abort();
+    else interceptedRequest.continue();
+  });
+};
+
 // scrape product list
 const scrapeProductList = async (url, limit = 10) => {
   console.log("🚀 Launching Puppeteer...");
 
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
+  page.setRequestInterception(true);
+  handleInterceptRequest(page);
 
   console.log(`🔍 Navigating to ${url}...`);
-  await page.goto(url, { waitUntil: "domcontentloaded" });
+  await page.goto(url, { waitUntil: ["domcontentloaded"] });
 
   // Check if the product is not found
   const isNotFound = await page.evaluate(() => {
@@ -34,7 +50,7 @@ const scrapeProductList = async (url, limit = 10) => {
       document.querySelectorAll(".s-item.s-item__pl-on-bottom")
     ).slice(2, parseInt(limit) + 2);
 
-    return productListings.map((product, index) => ({
+    return productListings.map((product) => ({
       name: product.querySelector(".s-item__title")?.innerText.trim() ?? "-",
       price: product.querySelector(".s-item__price")?.innerText.trim() ?? "-",
       image:
@@ -94,6 +110,7 @@ const scrapeProductDetail = async (urls) => {
     concurrency: Cluster.CONCURRENCY_PAGE,
     maxConcurrency: 10,
     puppeteer,
+    workerCreationDelay: 200,
     puppeteerOptions: {
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -101,58 +118,47 @@ const scrapeProductDetail = async (urls) => {
   });
 
   await cluster.task(async ({ page, data: url }) => {
-    let retries = 3; // Number of retries allowed
+    try {
+      page.setRequestInterception(true);
+      handleInterceptRequest(page);
 
-    while (retries > 0) {
-      try {
-        console.log(`🔍 Navigating to product page: ${url}`);
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 90000 }); // Increased timeout
+      console.log(`🔍 Navigating to product page: ${url}`);
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 90000 });
 
-        console.log(`📌 Checking for iframe on ${url}`);
-        const iframeSrc = await page.evaluate(() => {
-          const iframe = document.querySelector("#desc_ifr");
-          return iframe ? iframe.getAttribute("src") : null;
+      console.log(`📌 Checking for iframe on ${url}`);
+      const iframeSrc = await page.evaluate(() => {
+        const iframe = document.querySelector("#desc_ifr");
+        return iframe ? iframe.getAttribute("src") : null;
+      });
+
+      let description = "-";
+
+      if (iframeSrc) {
+        console.log(`🔄 Navigating to iframe: ${iframeSrc}`);
+        await page.goto(iframeSrc, {
+          waitUntil: "domcontentloaded",
+          timeout: 90000,
         });
 
-        let description = "-";
-
-        if (iframeSrc) {
-          console.log(`🔄 Navigating to iframe: ${iframeSrc}`);
-          await page.goto(iframeSrc, {
-            waitUntil: "domcontentloaded",
-            timeout: 90000,
-          });
-
-          description = await page.evaluate(() => {
-            const descElement = document.querySelector(
-              ".x-item-description-child"
-            );
-            return descElement ? descElement.innerText.trim() : "tidak ada";
-          });
-        }
-
-        console.log(`✅ Description fetched for ${url}`);
-        descriptionResult.push({ url, description });
-        return; // Exit loop
-      } catch (error) {
-        console.error(
-          `❌ Error fetching description for ${url}: ${error.message}`
-        );
-
-        if (error.message.includes("Navigation timeou")) {
-          console.warn(`🔄 Retrying... Attempts left: ${retries - 1}`);
-          retries--;
-          await new Promise((res) => setTimeout(res, 3000)); // Wait before retrying
-        } else {
-          break; // Exit loop
-        }
+        description = await page.evaluate(() => {
+          const descElement = document.querySelector(
+            ".x-item-description-child"
+          );
+          return descElement ? descElement.innerText.trim() : "-";
+        });
       }
+
+      console.log(`✅ Description fetched for ${url}`);
+      descriptionResult.push({ url, description });
+      return;
+    } catch (error) {
+      console.error(
+        `❌ Error fetching description for ${url}: ${error.message}`
+      );
+      failedCount++;
     }
 
-    // If all retries failed
-    console.error(`❌ Failed after retries: ${url}`);
     descriptionResult.push({ url, description: "-" });
-    failedCount++;
   });
 
   urls.forEach((url) => {
@@ -166,7 +172,7 @@ const scrapeProductDetail = async (urls) => {
   await cluster.idle();
   console.log("✅ All tasks completed.");
 
-  await cluster.close();
+  await cluster?.close();
   console.log("🚪 Cluster closed.");
   console.log("");
 
