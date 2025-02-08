@@ -70,24 +70,24 @@ const scrapeProducts = async (req, res) => {
 
     // ✅ AI Analysis with proper error handling
     console.log("🔍 Starting Deepseek AI Analysis...");
-    // await Promise.allSettled(
-    //   products.map(async (product, index) => {
-    //     try {
-    //       console.log(
-    //         `⚡ [${index + 1}/${products.length}] Analyzing: ${product.name}`
-    //       );
-    //       product.analyzeAi = await deepseekAnalyzeService(product.name);
-    //       console.log(`✅ Analysis complete: ${product.name}`);
-    //     } catch (error) {
-    //       console.error(
-    //         `❌ Error analyzing product: ${product.name}`,
-    //         error.message
-    //       );
-    //       product.analyzeAi = "-";
-    //       AIAnalyzerFailAttempt++;
-    //     }
-    //   })
-    // );
+    await Promise.allSettled(
+      products.map(async (product, index) => {
+        try {
+          console.log(
+            `⚡ [${index + 1}/${products.length}] Analyzing: ${product.name}`
+          );
+          product.analyzeAi = await deepseekAnalyzeService(product.name);
+          console.log(`✅ Analysis complete: ${product.name}`);
+        } catch (error) {
+          console.error(
+            `❌ Error analyzing product: ${product.name}`,
+            error.message
+          );
+          product.analyzeAi = "-";
+          AIAnalyzerFailAttempt++;
+        }
+      })
+    );
 
     console.log(
       `✅ Deepseek Analysis Completed. Failed Attempts: ${AIAnalyzerFailAttempt}`
