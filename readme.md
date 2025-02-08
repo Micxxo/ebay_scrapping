@@ -37,6 +37,7 @@ APP_PORT → The port number where the Express.js application runs.
 BASE_URL → The base URL, received from eBay.
 VERSIONING → Defines the API versioning strategy (e.g., v1, v2).
 LM_STUDIO_API_URL → The endpoint from LM Studio.
+PROXIESKEY → Optional, apikey from zenrows. Just case want to use proxies
 ```
 
 5.) Start Server
@@ -66,6 +67,6 @@ LM_STUDIO_API_URL → The endpoint from LM Studio.
 | `page`           | `string` | **optional**. The page number to scrape. Determines which set of results to fetch from eBay's search results. Default is 1. |
 | `limit_per_page` | `string` | **optional**. The number of products to scrape per page. Default is 60, but can be adjusted to fit specific needs.          |
 
-## Screenshots
+<!-- ## Screenshots
 
-[Scrape 1 page with 60 datas](https://drive.google.com/file/d/1QG_h27pC7fnjRql6XtQRlqsM13A5Nria/view?usp=drive_link)
+[]() -->
