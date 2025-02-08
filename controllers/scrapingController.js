@@ -20,29 +20,40 @@ const scrapeProducts = async (req, res) => {
 
     // ✅ Parallelized fetching of product lists
     const scrapeResults = await Promise.allSettled(
-      Array.from({ length: pageNumber }, async (_, index) => {
-        const url = handleUrlParser({ limit, page: index + 1, query: search });
-        console.log(`🔎 Fetching products from: ${url}`);
+      Array.from({ length: pageNumber }, (_, index) =>
+        (async () => {
+          await new Promise((resolve) => setTimeout(resolve, index * 300));
 
-        try {
-          const productData = await scrapeProductList(url, limit);
-          if (productData?.productLists?.length > 0) {
-            console.log(
-              `✅ Page ${index + 1}: Fetched ${
-                productData.productLists.length
-              } products.`
+          const url = handleUrlParser({
+            limit,
+            page: index + 1,
+            query: search,
+          });
+          console.log(`🔎 Fetching products from: ${url}`);
+
+          try {
+            const productData = await scrapeProductList(url, limit);
+            if (productData?.productLists?.length > 0) {
+              console.log(
+                `✅ Page ${index + 1}: Fetched ${
+                  productData.productLists.length
+                } products.`
+              );
+              descriptionFailAttempt += productData.descriptionFailAttempt;
+              return productData.productLists;
+            } else {
+              console.warn(`⚠️ Page ${index + 1}: No products found.`);
+              return [];
+            }
+          } catch (error) {
+            console.error(
+              `❌ Error fetching page ${index + 1}:`,
+              error.message
             );
-            descriptionFailAttempt += productData.descriptionFailAttempt;
-            return productData.productLists;
-          } else {
-            console.warn(`⚠️ Page ${index + 1}: No products found.`);
             return [];
           }
-        } catch (error) {
-          console.error(`❌ Error fetching page ${index + 1}:`, error.message);
-          return [];
-        }
-      })
+        })()
+      )
     );
 
     // ✅ Merge results
@@ -59,24 +70,24 @@ const scrapeProducts = async (req, res) => {
 
     // ✅ AI Analysis with proper error handling
     console.log("🔍 Starting Deepseek AI Analysis...");
-    await Promise.allSettled(
-      products.map(async (product, index) => {
-        try {
-          console.log(
-            `⚡ [${index + 1}/${products.length}] Analyzing: ${product.name}`
-          );
-          product.analyzeAi = await deepseekAnalyzeService(product.name);
-          console.log(`✅ Analysis complete: ${product.name}`);
-        } catch (error) {
-          console.error(
-            `❌ Error analyzing product: ${product.name}`,
-            error.message
-          );
-          product.analyzeAi = "-";
-          AIAnalyzerFailAttempt++;
-        }
-      })
-    );
+    // await Promise.allSettled(
+    //   products.map(async (product, index) => {
+    //     try {
+    //       console.log(
+    //         `⚡ [${index + 1}/${products.length}] Analyzing: ${product.name}`
+    //       );
+    //       product.analyzeAi = await deepseekAnalyzeService(product.name);
+    //       console.log(`✅ Analysis complete: ${product.name}`);
+    //     } catch (error) {
+    //       console.error(
+    //         `❌ Error analyzing product: ${product.name}`,
+    //         error.message
+    //       );
+    //       product.analyzeAi = "-";
+    //       AIAnalyzerFailAttempt++;
+    //     }
+    //   })
+    // );
 
     console.log(
       `✅ Deepseek Analysis Completed. Failed Attempts: ${AIAnalyzerFailAttempt}`
