@@ -1,8 +1,10 @@
 const puppeteer = require("puppeteer-extra");
 const { Cluster } = require("puppeteer-cluster");
+require("dotenv").config();
 
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 puppeteer.use(StealthPlugin());
+const connectionURL = `wss://browser.zenrows.com?apikey=${process.env.PROXIESKEY}&proxy_region=na`;
 
 const handleInterceptRequest = (page) => {
   page.on("request", (interceptedRequest) => {
@@ -22,13 +24,14 @@ const handleInterceptRequest = (page) => {
 const scrapeProductList = async (url, limit = 10) => {
   console.log("🚀 Launching Puppeteer...");
 
+  // const browser = await puppeteer.connect({ browserWSEndpoint: connectionURL });
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
   page.setRequestInterception(true);
   handleInterceptRequest(page);
 
   console.log(`🔍 Navigating to ${url}...`);
-  await page.goto(url, { waitUntil: ["domcontentloaded"] });
+  await page.goto(url, { waitUntil: "domcontentloaded" });
 
   // Check if the product is not found
   const isNotFound = await page.evaluate(() => {
@@ -180,3 +183,20 @@ const scrapeProductDetail = async (urls) => {
 };
 
 module.exports = scrapeProductList;
+
+// const checkIp = async (url, limit = 10) => {
+//   const browser = await puppeteer.connect({
+//     browserWSEndpoint: connectionURL});
+//   // const browser = await puppeteer.launch({ headless: false });
+//   const page = await browser.newPage();
+
+//   await page.goto("https://ipinfo.io/ip");
+
+//   const pre = await page.evaluate(() => {
+//     const element = document.querySelector("pre");
+//     return element.innerText.trim();
+//   });
+
+//   console.log(pre);
+//   await browser.close();
+// };
