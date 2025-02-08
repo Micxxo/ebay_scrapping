@@ -32,9 +32,9 @@ const deepseekAnalyzeService = async (productName) => {
       }
     );
 
-    const analysis = response.data.choices[0].message.content;
+    const analysis = response.data.choices[0].message.content.trim();
 
-    return analysis.trim();
+    return analysis;
   } catch (error) {
     console.error("Error calling LM Studio API:", error.response.status);
     return `failed Analyzes product`;
